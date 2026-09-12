@@ -3,21 +3,24 @@
 
   outputs = {nixpkgs, ...}: let
     inherit (nixpkgs) lib legacyPackages;
+
     util = import ./lib lib;
+    scanPath = path: util.recursiveScan {inherit path;};
+    forAllSystems = lib.genAttrs lib.systems.flakeExposed;
   in {
     inherit util;
 
-    nixosModules = util.mkModuleTree ./modules/nixos;
+    nixosModules = scanPath ./modules/nixos;
 
-    darwinModules = util.mkModuleTree ./modules/darwin;
+    darwinModules = scanPath ./modules/darwin;
 
-    homeModules = util.mkModuleTree ./modules/home;
+    homeModules = scanPath ./modules/home;
 
     # Used by `nix develop .#<name>`
-    devShells = util.forAllSystems (system: import ./shells legacyPackages.${system});
+    devShells = forAllSystems (system: import ./shells legacyPackages.${system});
 
     # Set formatter used by `nix fmt`
-    formatter = util.forAllSystems (system: legacyPackages.${system}.nixfmt);
+    formatter = forAllSystems (system: legacyPackages.${system}.nixfmt);
 
     # Used by `nix flake init -t <flake>`
     templates = import ./templates lib;

@@ -1,0 +1,4 @@
+{
+  username = "nixos";
+  timeZone = "UTC";
+}

@@ -3,53 +3,47 @@
   lib,
   pkgs,
   hostname,
-  hostdir,
   ...
 }: let
-  /*
-   WARN:
-  'self' is always implicitly passed as an argument to 'outputs', therefore to
-  reference the main flake we need to use inputs.nix-config
-  */
-  vars = inputs.nix-config.util.mkVars (inputs.secrets or {});
-in {
-  options.M = {};
+  inherit (inputs) nix-config self;
+  inherit (nix-config.util) optionalPath;
 
-  config = lib.mkMerge [
-    {
-      # Adding finalized vars into module's args
-      _module.args.vars = vars;
+  vars = lib.recursiveUpdate (import nix-config) (import self);
+in
+  {
+    imports = optionalPath (self + "/configuration.nix");
 
-      # Setting machine's hostname
-      networking.hostName = lib.mkForce hostname;
+    # Adding finalized vars into module's args
+    _module.args.vars = vars;
 
-      # Always enable flake's fetures
-      nix.settings = {
-        experimental-features = ["nix-command" "flakes"];
-        # trusted-users, substituters, etc.
-      };
+    # Setting machine's hostname
+    networking.hostName = lib.mkForce hostname;
 
-      nixpkgs.config.allowUnfree = lib.mkDefault true;
+    # Always enable flake's fetures
+    nix.settings = {
+      experimental-features = lib.mkForce ["nix-command" "flakes"];
+      # trusted-users, substituters, etc.
+    };
 
-      # Global system-wide packages
-      environment.systemPackages = with pkgs; [
-        git
-        curl
-      ];
-    }
+    nixpkgs.config.allowUnfree = lib.mkDefault true;
 
-    (lib.mkIf (inputs ? "home-manager") {
-      home-manager = {
-        useGlobalPkgs = lib.mkDefault true;
-        useUserPackages = lib.mkDefault true;
-        extraSpecialArgs = {inherit inputs vars;};
-      };
+    # Global system-wide packages
+    environment.systemPackages = with pkgs; [
+      curl
+    ];
 
-      home-manager.users.${vars.username}.imports = let
-        home = hostdir + "/home.nix";
-      in
-        [./home]
-        ++ lib.optional (hostdir != null && builtins.pathExists home) home;
-    })
-  ];
-}
+    # Global configurable programs
+    programs.git.enable = true;
+  }
+  // (lib.mkIf (inputs ? "home-manager") {
+    home-manager = {
+      useGlobalPkgs = true;
+      useUserPackages = true;
+      extraSpecialArgs = lib.mkForce {inherit inputs vars;};
+    };
+
+    home-manager.users.${vars.username}.imports = [
+      inputs.homeModules.default
+      (optionalPath (self + "/home.nix"))
+    ];
+  })

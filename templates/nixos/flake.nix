@@ -10,12 +10,11 @@
 
     hostname = "__HOSTNAME__";
     system = "__SYSTEM__";
+    modules = [nix-config.nixosModules.default];
   in {
-    nixosConfigurations.${hostname} = nix-config.util.mkHost {
-      inherit hostname system inputs;
-      build = lib.nixosSystem;
-      hostdir = ./.;
-      defaultModule = nix-config.nixosModules.default;
+    nixosConfigurations.${hostname} = lib.nixosSystem {
+      inherit system modules;
+      specialArgs = {inherit inputs system hostname;};
     };
 
     checks.${system} = nix-config.checks.${system};
