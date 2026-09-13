@@ -1,5 +1,5 @@
 {vars, ...}: {
-  time.timeZone = vars.timezone;
+  time.timeZone = vars.timeZone;
 
   i18n.defaultLocale = "en_US.UTF-8";
 }
