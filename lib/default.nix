@@ -29,5 +29,9 @@ lib: rec {
 
   mergeAttrsNoOverride = builtins.foldl' lib.attrsets.unionOfDisjoint {};
 
-  optionalPath = path: lib.optional (path != null && builtins.pathExists path) path;
+  optionalPaths = paths:
+    builtins.filter (
+      path: path != null && builtins.pathExists path
+    )
+    paths;
 }

@@ -2,19 +2,15 @@
   inputs,
   lib,
   pkgs,
-  hostname,
+  hostname, # supplied via specialArgs in system builder
+  vars, # same as hostname
   ...
 }: let
   inherit (inputs) nix-config self;
-  inherit (nix-config.util) optionalPath;
-
-  vars = lib.recursiveUpdate (import nix-config) (import self);
+  inherit (nix-config.util) optionalPaths;
 in
   {
-    imports = optionalPath (self + "/configuration.nix");
-
-    # Adding finalized vars into module's args
-    _module.args.vars = vars;
+    imports = optionalPaths [(self + "/configuration.nix")];
 
     # Setting machine's hostname
     networking.hostName = lib.mkForce hostname;
@@ -44,6 +40,6 @@ in
 
     home-manager.users.${vars.username}.imports = [
       inputs.homeModules.default
-      (optionalPath (self + "/home.nix"))
+      (optionalPaths [(self + "/home.nix")])
     ];
   })

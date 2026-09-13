@@ -2,6 +2,7 @@
   description = "__DESCRIPTION__";
 
   outputs = {
+    self,
     nix-config,
     nixpkgs,
     ...
@@ -10,11 +11,15 @@
 
     hostname = "__HOSTNAME__";
     system = "__SYSTEM__";
-    modules = [nix-config.nixosModules.default];
+
+    vars = lib.recursiveUpdate (import nix-config) (import self);
   in {
     nixosConfigurations.${hostname} = lib.nixosSystem {
-      inherit system modules;
-      specialArgs = {inherit inputs system hostname;};
+      inherit system;
+      specialArgs = {inherit inputs hostname vars;};
+      modules = [
+        nix-config.nixosModules.default
+      ];
     };
 
     checks.${system} = nix-config.checks.${system};

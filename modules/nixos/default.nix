@@ -7,6 +7,7 @@
     ../. # Global configs
     ./networking.nix
     ./packages.nix
+    ./locale.nix
 
     (lib.optional
       (inputs ? "home-manager")
