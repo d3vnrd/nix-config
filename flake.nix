@@ -14,7 +14,7 @@
 
     darwinModules = mkModulesTree ./modules/darwin;
 
-    homeModules = mkModulesTree ./modules/home;
+    homeManagerModules = mkModulesTree ./modules/home;
 
     # Used by `nix develop .#<name>`
     devShells = forAllSystems (system: import ./shells legacyPackages.${system});

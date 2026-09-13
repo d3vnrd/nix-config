@@ -39,6 +39,6 @@ in
     };
 
     home-manager.users.${vars.username}.imports =
-      [inputs.homeModules.default]
+      [nix-config.homeManagerModules.default]
       ++ optionalPaths [(self + "/home.nix")];
   })
