@@ -5,16 +5,16 @@
     inherit (nixpkgs) lib legacyPackages;
 
     util = import ./lib lib;
-    scanPath = path: util.recursiveScan {inherit path;};
+    mkModulesTree = path: util.recursiveScan {inherit path;};
     forAllSystems = lib.genAttrs lib.systems.flakeExposed;
   in {
     inherit util;
 
-    nixosModules = scanPath ./modules/nixos;
+    nixosModules = mkModulesTree ./modules/nixos;
 
-    darwinModules = scanPath ./modules/darwin;
+    darwinModules = mkModulesTree ./modules/darwin;
 
-    homeModules = scanPath ./modules/home;
+    homeModules = mkModulesTree ./modules/home;
 
     # Used by `nix develop .#<name>`
     devShells = forAllSystems (system: import ./shells legacyPackages.${system});

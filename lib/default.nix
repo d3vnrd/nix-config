@@ -29,6 +29,8 @@ lib: rec {
 
   mergeAttrsNoOverride = builtins.foldl' lib.attrsets.unionOfDisjoint {};
 
+  mergeAttrsRecursive = builtins.foldl' lib.recursiveUpdate {};
+
   optionalPaths = paths:
     builtins.filter (
       path: path != null && builtins.pathExists path
