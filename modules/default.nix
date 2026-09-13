@@ -38,8 +38,7 @@ in
       extraSpecialArgs = lib.mkForce {inherit inputs vars;};
     };
 
-    home-manager.users.${vars.username}.imports = [
-      inputs.homeModules.default
-      (optionalPaths [(self + "/home.nix")])
-    ];
+    home-manager.users.${vars.username}.imports =
+      [inputs.homeModules.default]
+      ++ optionalPaths [(self + "/home.nix")];
   })

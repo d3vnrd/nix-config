@@ -12,7 +12,10 @@
     hostname = "__HOSTNAME__";
     system = "__SYSTEM__";
 
-    vars = lib.recursiveUpdate (import nix-config) (import self);
+    vars = nix-config.util.mergeAttrsRecursive [
+      (import nix-config)
+      (import self)
+    ];
   in {
     nixosConfigurations.${hostname} = lib.nixosSystem {
       inherit system;
