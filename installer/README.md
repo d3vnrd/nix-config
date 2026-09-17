@@ -1,1 +1,0 @@
-# NixOs's Installer
