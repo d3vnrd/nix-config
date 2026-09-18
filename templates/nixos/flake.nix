@@ -9,8 +9,8 @@
   } @ inputs: let
     inherit (nixpkgs) lib;
 
-    hostname = "__HOSTNAME__";
     system = "__SYSTEM__";
+    hostname = "__HOSTNAME__";
 
     vars = nix-config.util.mergeAttrsRecursive [
       (import nix-config)
