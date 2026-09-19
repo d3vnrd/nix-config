@@ -1,17 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-terminate() {
-    echo "[ERROR] $*" >&2
-    exit 1
-}
-
-if [[ ! -d "$LIB_PATH" ]]; then
-    terminate "Installer library does not exist: $LIB_PATH"
-fi
-
-source "$LIB_PATH/lib.sh"
-
 check --type cmd nix ssh git
 
 SOURCE_HOSTNAME=$(hostname)

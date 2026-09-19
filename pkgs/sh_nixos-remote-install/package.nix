@@ -3,17 +3,17 @@
   nix-config,
   ...
 }:
-pkgs.writeShellApplication {
-  name = "nixos-remote-install";
-  text = builtins.readFile ./remote-install.sh;
-
+pkgs.writeShellApplication rec {
+  name = "remote-install";
+  text = ''
+    source "${nix-config.sh_shared-lib}/lib.sh"
+    source "${./lib.sh}"
+    ${builtins.readFile ./${name}.sh}
+  '';
   runtimeInputs = with pkgs; [
     sops
     rsync
     git
     openssh
   ];
-  runtimeEnv = {
-    LIB_PATH = "${nix-config.sh_shared-lib}";
-  };
 }
