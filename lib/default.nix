@@ -27,13 +27,30 @@ lib: rec {
     )
     entries;
 
-  mergeAttrsNoOverride = builtins.foldl' lib.attrsets.unionOfDisjoint {};
-
-  mergeAttrsRecursive = builtins.foldl' lib.recursiveUpdate {};
-
   optionalPaths = paths:
     builtins.filter (
       path: path != null && builtins.pathExists path
     )
     paths;
+
+  mkHost = {
+    build,
+    inputs,
+    system,
+    hostname ? "nixos",
+    modules ? [],
+  }:
+    build {
+      inherit system modules;
+      specialArgs = {
+        inherit inputs hostname;
+        vars = mergeAttrsRecursive (builtins.map import (
+          [../.] ++ optionalPaths [(inputs.self + "/default.nix")]
+        ));
+      };
+    };
+
+  mergeAttrsNoOverride = builtins.foldl' lib.attrsets.unionOfDisjoint {};
+
+  mergeAttrsRecursive = builtins.foldl' lib.recursiveUpdate {};
 }

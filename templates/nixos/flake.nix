@@ -2,24 +2,16 @@
   description = "__DESCRIPTION__";
 
   outputs = {
-    self,
     nix-config,
     nixpkgs,
     ...
   } @ inputs: let
-    inherit (nixpkgs) lib;
-
     system = "__SYSTEM__";
     hostname = "__HOSTNAME__";
-
-    vars = nix-config.util.mergeAttrsRecursive [
-      (import nix-config)
-      (import self)
-    ];
   in {
-    nixosConfigurations.${hostname} = lib.nixosSystem {
-      inherit system;
-      specialArgs = {inherit inputs hostname vars;};
+    nixosConfigurations.${hostname} = nix-config.util.mkHost {
+      inherit inputs system hostname;
+      build = nixpkgs.lib.nixosSystem;
       modules = [
         nix-config.nixosModules.default
       ];

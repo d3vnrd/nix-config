@@ -2,35 +2,82 @@
   description = "__DESCRIPTION__";
 
   outputs = {
+    self,
     nixpkgs,
-    disko,
+    nixos-wsl,
     ...
-  }: let
+  } @ inputs: let
     inherit (nixpkgs) lib;
 
     supported = ["__SYSTEMS__"];
-    modules = [
-      disko.nixsoModules.disko
-      ./configuration.nix
-    ];
+
+    mkInstaller = name: extraModules:
+      lib.genAttrs' supported (
+        system: {
+          name = "${name}_${system}";
+          value = lib.nixosSystem {
+            inherit system;
+            specialArgs = {inherit inputs system;};
+            modules =
+              [
+                ({pkgs, ...}: {
+                  nix.settings.experimental-features = ["nix-command" "flakes"];
+                  nixpkgs.config.allowUnfree = true;
+
+                  networking.hostName = name;
+
+                  programs.git.enable = true;
+                  programs.vim = {
+                    enable = true;
+                    defaultEditor = true;
+                  };
+                })
+              ]
+              ++ extraModules;
+          };
+        }
+      );
   in {
-    nixosConfigurations = builtins.listToAttrs (
-      map (system: {
-        name = "iso-${system}";
-        value = lib.nixosSystem {
-          inherit system modules;
-        };
-      })
-      supported
-    );
+    nixosConfigurations =
+      (mkInstaller "iso" [
+        ({
+          inputs,
+          pkgs,
+          modulesPath,
+          system,
+          ...
+        }: {
+          imports = [
+            (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
+          ];
+
+          isoImage.squashfsCompression = "zstd -Xcompression-level 3";
+
+          environment.systemPackages = with pkgs; [disko];
+        })
+      ])
+      ++ (mkInstaller "wsl" [
+        {
+          imports = [
+            nixos-wsl.nixosModules.wsl
+          ];
+
+          wsl.enable = true;
+          wsl.defaultUser = "nixos";
+        }
+      ]);
+
+    packages = lib.genAttrs supported (system: {
+      default =
+        self.nixosConfigurations."iso_${system}".config.system.build.isoImage;
+      wsl =
+        self.nixosConfigurations."wsl_${system}".config.system.build.tarballBuilder;
+    });
   };
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-    disko = {
-      url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nix-config.url = "github:d3vnrd/nix-config";
+    nixpkgs.follows = "nix-config/nixpkgs";
+    nixos-wsl.follows = "nix-config/nixos-wsl";
   };
 }
