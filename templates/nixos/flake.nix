@@ -9,7 +9,7 @@
     system = "__SYSTEM__";
     hostname = "__HOSTNAME__";
   in {
-    nixosConfigurations.${hostname} = nix-config.util.mkHost {
+    nixosConfigurations.${hostname} = nix-config.lib.mkHost {
       inherit inputs system hostname;
       build = nixpkgs.lib.nixosSystem;
       modules = [

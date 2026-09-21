@@ -2,12 +2,12 @@
   inputs,
   lib,
   pkgs,
-  hostname ? "nixos",
-  vars ? import inputs.nix-config, # fallback to nix-config default vars
+  hostname,
+  vars,
   ...
 }: let
   inherit (inputs) nix-config self;
-  inherit (nix-config.util) optionalPaths;
+  inherit (nix-config.lib) optionalPaths;
 in {
   imports = optionalPaths [(self + "/configuration.nix")];
 

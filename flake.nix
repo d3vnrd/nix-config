@@ -6,28 +6,29 @@
     nixpkgs,
     ...
   } @ inputs: let
-    inherit (nixpkgs) lib legacyPackages;
-
-    util = import ./lib lib;
-    mkModulesTree = path: util.recursiveScan {inherit path;};
+    inherit (nixpkgs) lib;
     forAllSystems = lib.genAttrs lib.systems.flakeExposed;
   in {
-    inherit util;
+    lib = import ./lib lib;
 
-    nixosModules = mkModulesTree ./modules/nixos;
+    nixosModules = self.lib.recursiveScan ./modules/nixos;
 
-    darwinModules = mkModulesTree ./modules/darwin;
+    darwinModules = self.lib.recursiveScan ./modules/darwin;
 
-    homeModules = mkModulesTree ./modules/home;
+    homeModules = self.lib.recursiveScan ./modules/home;
 
     # Used by `nix flake check`
     # checks = forAllSystems (system: {});
 
     # Used by `nix develop .#<name>`
-    devShells = forAllSystems (system: import ./shells legacyPackages.${system});
+    devShells = forAllSystems (
+      system: import ./shells nixpkgs.legacyPackages.${system}
+    );
 
     # Set formatter used by `nix fmt`
-    formatter = forAllSystems (system: legacyPackages.${system}.nixfmt);
+    formatter = forAllSystems (
+      system: nixpkgs.legacyPackages.${system}.nixfmt
+    );
 
     /*
     Nix-config's shared derivations
