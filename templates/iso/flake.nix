@@ -4,6 +4,7 @@
   outputs = {
     self,
     nixpkgs,
+    nix-config,
     nixos-wsl,
     ...
   } @ inputs: let
@@ -11,67 +12,64 @@
 
     supported = ["__SYSTEMS__"];
 
-    mkInstaller = name: extraModules:
-      lib.genAttrs' supported (
-        system: {
-          name = "${name}_${system}";
-          value = lib.nixosSystem {
-            inherit system;
-            specialArgs = {inherit inputs system;};
-            modules =
-              [
-                ({pkgs, ...}: {
-                  nix.settings.experimental-features = ["nix-command" "flakes"];
-                  nixpkgs.config.allowUnfree = true;
-
-                  networking.hostName = name;
-
-                  programs.git.enable = true;
-                  programs.vim = {
-                    enable = true;
-                    defaultEditor = true;
-                  };
-                })
-              ]
-              ++ extraModules;
-          };
-        }
-      );
+    forAllSystems = lib.genAttrs supported;
+    forAllSystems' = lib.genAttrs' supported;
   in {
-    nixosConfigurations =
-      (mkInstaller "iso" [
-        ({
-          inputs,
-          pkgs,
-          modulesPath,
-          system,
-          ...
-        }: {
-          imports = [
-            (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
+    nixosConfigurations = nix-config.lib.mergeAttrsNoOverride [
+      (forAllSystems' (system: {
+        name = "iso_${system}";
+        value = nix-config.lib.mkInstaller {
+          inherit inputs system;
+          hostname = "iso";
+          extraModules = [
+            ({
+              pkgs,
+              modulesPath,
+              ...
+            }: {
+              imports = [
+                (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
+              ];
+
+              isoImage.squashfsCompression = "zstd -Xcompression-level 3";
+              environment.systemPackages = [pkgs.disko];
+            })
           ];
+        };
+      }))
 
-          isoImage.squashfsCompression = "zstd -Xcompression-level 3";
+      (forAllSystems' (system: {
+        name = "wsl_${system}";
+        value = nix-config.lib.mkInstaller {
+          inherit inputs system;
+          hostname = "wsl";
+          extraModules = [
+            {
+              imports = [
+                nixos-wsl.nixosModules.wsl
+              ];
 
-          environment.systemPackages = with pkgs; [disko];
-        })
-      ])
-      ++ (mkInstaller "wsl" [
-        {
-          imports = [
-            nixos-wsl.nixosModules.wsl
+              wsl.enable = true;
+              wsl.defaultUser = "nixos";
+            }
           ];
+        };
+      }))
+    ];
 
-          wsl.enable = true;
-          wsl.defaultUser = "nixos";
-        }
-      ]);
+    packages = forAllSystems (system: rec {
+      iso = self.nixosConfigurations."iso_${system}".config.system.build.isoImage;
+      default = iso;
+    });
 
-    packages = lib.genAttrs supported (system: {
-      default =
-        self.nixosConfigurations."iso_${system}".config.system.build.isoImage;
-      wsl =
-        self.nixosConfigurations."wsl_${system}".config.system.build.tarballBuilder;
+    apps = forAllSystems (system: rec {
+      wsl = {
+        type = "app";
+        program =
+          lib.getExe
+          self.nixosConfigurations."wsl_${system}".config.system.build.tarballBuilder;
+      };
+      default = wsl;
     });
   };
 

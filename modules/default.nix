@@ -23,14 +23,6 @@ in {
       };
 
       nixpkgs.config.allowUnfree = lib.mkDefault true;
-
-      # Global system-wide packages
-      environment.systemPackages = with pkgs; [
-        curl
-      ];
-
-      # Global configurable programs
-      programs.git.enable = true;
     }
 
     (lib.mkIf (inputs ? "home-manager") {

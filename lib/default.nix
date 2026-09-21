@@ -71,4 +71,18 @@ lib: rec {
         ));
       };
     };
+
+  mkInstaller = {
+    inputs,
+    system,
+    hostname,
+    extraModules ? [],
+  }:
+    mkHost {
+      inherit inputs system hostname;
+      build = lib.nixosSystem;
+      modules =
+        [inputs.nix-config.nixosModules.default]
+        ++ extraModules;
+    };
 }
