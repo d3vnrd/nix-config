@@ -51,6 +51,11 @@ lib: rec {
   optionalPaths = paths:
     builtins.filter (path: path != null && builtins.pathExists path) paths;
 
+  existingPathsRelativeTo = pos: paths:
+    builtins.filter builtins.pathExists (
+      map (p: pos + "/${p}") paths
+    );
+
   mergeAttrsNoOverride = builtins.foldl' lib.attrsets.unionOfDisjoint {};
 
   mergeAttrsRecursive = builtins.foldl' lib.recursiveUpdate {};
@@ -67,7 +72,7 @@ lib: rec {
       specialArgs = {
         inherit inputs hostname;
         vars = mergeAttrsRecursive (builtins.map import (
-          [../.] ++ optionalPaths [(inputs.self + "/default.nix")]
+          [../.] ++ (existingPathsRelativeTo inputs.self ["default.nix"])
         ));
       };
     };

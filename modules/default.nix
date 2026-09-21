@@ -1,24 +1,30 @@
 {
   inputs,
   lib,
-  pkgs,
   hostname,
   vars,
   ...
 }: let
   inherit (inputs) nix-config self;
-  inherit (nix-config.lib) optionalPaths;
+  inherit (nix-config.lib) existingPathsRelativeTo;
 in {
-  imports = optionalPaths [(self + "/configuration.nix")];
+  imports =
+    [./packages.nix ./programs.nix]
+    ++ (
+      existingPathsRelativeTo self [
+        "configuration.nix"
+        "hardware-configuration.nix"
+      ]
+    );
 
   config = lib.mkMerge [
     {
       # Setting machine's hostname
       networking.hostName = lib.mkForce hostname;
 
-      # Always enable flake's fetures
       nix.settings = {
         experimental-features = lib.mkForce ["nix-command" "flakes"];
+        auto-optimise-store = true;
         # trusted-users, substituters, etc.
       };
 
@@ -34,7 +40,7 @@ in {
 
       home-manager.users.${vars.username}.imports =
         [nix-config.homeModules.default]
-        ++ optionalPaths [(self + "/home.nix")];
+        ++ (existingPathsRelativeTo self ["home.nix"]);
     })
   ];
 }

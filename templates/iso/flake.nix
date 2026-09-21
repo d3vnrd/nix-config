@@ -57,11 +57,13 @@
       }))
     ];
 
+    # Run `nix build <.#iso or .>` to generate iso-image
     packages = forAllSystems (system: rec {
       iso = self.nixosConfigurations."iso_${system}".config.system.build.isoImage;
       default = iso;
     });
 
+    # Run `nix run <.#wsl or .>` to generate nixos.wsl installer
     apps = forAllSystems (system: rec {
       wsl = {
         type = "app";

@@ -12,8 +12,8 @@
     nixosConfigurations.${hostname} = nix-config.lib.mkHost {
       inherit inputs system hostname;
       build = nixpkgs.lib.nixosSystem;
-      modules = [
-        nix-config.nixosModules.default
+      modules = with nix-config.nixosModules; [
+        default
       ];
     };
 
