@@ -9,11 +9,13 @@
     system = "__SYSTEM__";
     hostname = "__HOSTNAME__";
   in {
-    nixosConfigurations.${hostname} = nix-config.lib.mkHost {
+    nixosConfigurations.${hostname} = nix-config.lib.mkNixOsSystem {
       inherit inputs system hostname;
-      build = nixpkgs.lib.nixosSystem;
       modules = with nix-config.nixosModules; [
-        default
+        # Import nix-config modules here
+        locale
+        networking
+        packages
       ];
     };
 

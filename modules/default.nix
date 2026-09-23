@@ -24,7 +24,7 @@ in {
 
       nix.settings = {
         experimental-features = lib.mkForce ["nix-command" "flakes"];
-        auto-optimise-store = true;
+        auto-optimise-store = lib.mkDefault true;
         # trusted-users, substituters, etc.
       };
 
@@ -33,8 +33,8 @@ in {
 
     (lib.mkIf (inputs ? "home-manager") {
       home-manager = {
-        useGlobalPkgs = true;
-        useUserPackages = true;
+        useGlobalPkgs = lib.mkDefault true;
+        useUserPackages = lib.mkDefault true;
         extraSpecialArgs = lib.mkForce {inherit inputs vars;};
       };
 

@@ -15,13 +15,14 @@
     forAllSystems = lib.genAttrs supported;
     forAllSystems' = lib.genAttrs' supported;
   in {
-    nixosConfigurations = nix-config.lib.mergeAttrsNoOverride [
+    nixosConfigurations = nix-config.lib.utils.mergeAttrsNoOverride (let
+      inherit (nix-config.lib.maker) mkNixOsInstaller;
+    in [
       (forAllSystems' (system: {
         name = "iso_${system}";
-        value = nix-config.lib.mkInstaller {
+        value = mkNixOsInstaller {
           inherit inputs system;
-          hostname = "iso";
-          extraModules = [
+          modules = [
             ({
               pkgs,
               modulesPath,
@@ -40,22 +41,18 @@
 
       (forAllSystems' (system: {
         name = "wsl_${system}";
-        value = nix-config.lib.mkInstaller {
+        value = mkNixOsInstaller {
           inherit inputs system;
-          hostname = "wsl";
-          extraModules = [
+          modules = [
+            nixos-wsl.nixosModules.wsl
             {
-              imports = [
-                nixos-wsl.nixosModules.wsl
-              ];
-
               wsl.enable = true;
               wsl.defaultUser = "nixos";
             }
           ];
         };
       }))
-    ];
+    ]);
 
     # Run `nix build <.#iso or .>` to generate iso-image
     packages = forAllSystems (system: rec {

@@ -6,7 +6,7 @@
     nixpkgs,
     ...
   } @ inputs: let
-    inherit (nixpkgs) lib;
+    inherit (nixpkgs) lib legacyPackages;
     forAllSystems = lib.genAttrs lib.systems.flakeExposed;
   in {
     lib = import ./lib lib;
@@ -22,12 +22,12 @@
 
     # Used by `nix develop .#<name>`
     devShells = forAllSystems (
-      system: import ./shells nixpkgs.legacyPackages.${system}
+      system: import ./shells legacyPackages.${system}
     );
 
     # Set formatter used by `nix fmt`
     formatter = forAllSystems (
-      system: nixpkgs.legacyPackages.${system}.nixfmt
+      system: legacyPackages.${system}.nixfmt
     );
 
     /*
