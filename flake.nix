@@ -6,58 +6,51 @@
     nixpkgs,
     ...
   } @ inputs: let
-    inherit (nixpkgs) lib legacyPackages;
-    forAllSystems = lib.genAttrs lib.systems.flakeExposed;
-  in {
-    lib = import ./lib lib;
+    inherit (nixpkgs) lib;
 
-    nixosModules = self.lib.recursiveScan ./modules/nixos;
+    supported = [
+      "x86_64-linux"
+    ];
 
-    darwinModules = self.lib.recursiveScan ./modules/darwin;
-
-    homeModules = self.lib.recursiveScan ./modules/home;
-
-    # Used by `nix flake check`
-    # checks = forAllSystems (system: {});
-
-    # Used by `nix develop .#<name>`
-    devShells = forAllSystems (
-      system: import ./shells legacyPackages.${system}
-    );
-
-    # Set formatter used by `nix fmt`
-    formatter = forAllSystems (
-      system: legacyPackages.${system}.nixfmt
-    );
-
-    /*
-    Nix-config's shared derivations
-    doc: https://noogle.dev/f/lib/packagesFromDirectoryRecursive/
-    ex: https://codeberg.org/fidgetingbits/introdus/src/branch/main/pkgs
-    */
-    packages = forAllSystems (system: let
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [self.overlays.default];
-      };
+    forAllSystems = let
+      pkgs = lib.genAttrs supported (
+        system:
+          import nixpkgs {
+            inherit system;
+            overlays = [self.overlays.default];
+          }
+      );
     in
-      lib.packagesFromDirectoryRecursive {
-        /*
-        Do not use `newScope` here: it adds `recurseForDerivations` to the
-        returned attribute set, which is incompatible with the flake's
-        `packages.${system}` interface. Package-to-package dependencies
-        are instead provided through the overlay `nix-config` namespace.
-        */
-        inherit (pkgs) callPackage; # Equivalent to `lib.callPackageWith pkgs`
-        directory = ./pkgs;
-      });
+      lib.mapAttrs (_: f: lib.mapAttrs (_: f) pkgs);
+  in
+    {
+      lib = import ./lib lib;
 
-    # Overlay, consumed by other flakes
-    overlays = import ./overlays {inherit inputs lib;};
+      # Overlay, consumed by other flakes
+      overlays = import ./overlays {inherit inputs lib;};
 
-    # Used by `nix flake init -t <flake>`
-    templates = import ./templates lib;
-  };
+      # Used by `nix flake init -t <flake>`
+      templates = import ./templates lib;
+
+      # Nix-config's exposed modules
+      nixosModules = self.lib.recursiveScan ./modules/nixos;
+      darwinModules = self.lib.recursiveScan ./modules/darwin;
+      homeModules = self.lib.recursiveScan ./modules/home;
+    }
+    // forAllSystems {
+      # Used by `nix develop .#<name>`
+      devShells = pkgs: import ./shells pkgs;
+
+      # Set formatter used by `nix fmt`
+      formatter = pkgs: pkgs.nixfmt;
+
+      # Exported derivations
+      packages = pkgs:
+        lib.packagesFromDirectoryRecursive {
+          inherit (pkgs) callPackage;
+          directory = ./pkgs;
+        };
+    };
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

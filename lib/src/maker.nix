@@ -27,18 +27,6 @@ in rec {
       };
     };
 
-  mkNixOsInstaller = {
-    inputs,
-    system ? "x86_64-linux",
-    modules ? [],
-  }:
-    mkHost {
-      inherit inputs system;
-      build = lib.nixosSystem;
-      hostname = "nixos";
-      modules = modules ++ [inputs.nix-config.nixosModules.default];
-    };
-
   mkNixOsSystem = {
     inputs,
     system ? "x86_64-linux",
@@ -62,4 +50,11 @@ in rec {
       system = "aarch64-darwin"; # x86_64-darwin (Intel) is being deprecated
       modules = modules ++ [inputs.nix-config.darwinModules.default];
     };
+
+  mkNixOsInstaller = {
+    inputs,
+    system ? "x86_64-linux",
+    modules ? [],
+  }:
+    mkNixOsSystem {inherit inputs system modules;};
 }
