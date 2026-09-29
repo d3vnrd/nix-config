@@ -6,7 +6,7 @@
   ...
 }: let
   inherit (inputs) nix-config self;
-  inherit (nix-config.lib) existingPathsRelativeTo;
+  inherit (nix-config.lib.utils) existingPathsRelativeTo;
 in {
   imports =
     [./packages.nix ./programs.nix]

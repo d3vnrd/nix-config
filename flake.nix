@@ -38,6 +38,8 @@
       homeModules = self.lib.recursiveScan ./modules/home;
     }
     // forAllSystems {
+      checks = pkgs: import ./checks {inherit inputs lib pkgs;};
+
       # Used by `nix develop .#<name>`
       devShells = pkgs: import ./shells pkgs;
 
