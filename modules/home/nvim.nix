@@ -2,18 +2,32 @@
   config,
   pkgs,
   ...
-}: {
+}: let
+  cfg = config.M;
+in {
+  imports = [
+    ./yazi.nix
+  ];
+
   programs.neovim = {
     enable = true;
     defaultEditor = true;
-    extraPackages = with pkgs; [gcc tree-sitter fd];
+    sideloadInitLua = cfg.dotfiles.enable;
+    extraPackages = with pkgs; [
+      fd
+      fzf
+      gcc
+      tree-sitter
+      xclip
+      sqlite
+    ];
   };
 
   home.file.".config/nvim" = {
     source =
       config.lib.file.mkOutOfStoreSymlink
-      "${config.M.dotfiles.path}/nvim";
+      "${cfg.dotfiles.path}/nvim";
 
-    enable = config.M.dotfiles.enable;
+    enable = cfg.dotfiles.enable;
   };
 }
