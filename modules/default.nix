@@ -31,7 +31,7 @@ in {
       nixpkgs.config.allowUnfree = lib.mkDefault true;
     }
 
-    (lib.mkIf (inputs ? "home-manager") {
+    (lib.optionalAttrs (inputs ? "home-manager") {
       home-manager = {
         useGlobalPkgs = lib.mkDefault true;
         useUserPackages = lib.mkDefault true;
