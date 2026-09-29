@@ -7,20 +7,28 @@
 }: let
   cfg = config.M;
 in {
-  options.M.dotfiles = {
-    enable = lib.mkEnableOption "Enable support for user dotfiles.";
+  options.M = {
+    dotfiles = {
+      enable = lib.mkEnableOption "Enable support for user dotfiles.";
 
-    url = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-      description = "Git repository containing the user's dotfiles.";
-      example = "https://github.com/example/dotfiles.git";
+      url = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "Git repository containing the user's dotfiles.";
+        example = "https://github.com/example/dotfiles.git";
+      };
+
+      path = lib.mkOption {
+        type = lib.types.str;
+        default = "${config.home.homeDirectory}/dotfiles";
+        description = "Location where the dotfiles repository is cloned.";
+      };
     };
 
-    path = lib.mkOption {
-      type = lib.types.str;
-      default = "${config.home.homeDirectory}/dotfiles";
-      description = "Location where the dotfiles repository is cloned.";
+    enableDefaultPkgs = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable default user packages.";
     };
   };
 
@@ -44,9 +52,41 @@ in {
       '';
     })
 
-    (lib.mkDefault {
+    {
       home.username = vars.username;
-      home.stateVersion = "26.05";
-    })
+
+      home.packages = lib.optionals cfg.enableDefaultPkgs (with pkgs; [
+        # -- LSP --
+        bash-language-server
+        lua-language-server
+        yaml-language-server
+        vscode-css-languageserver
+        nil
+        harper
+        basedpyright
+        tinymist
+        markdown-oxide
+
+        # -- DAP --
+
+        # -- Linter --
+
+        # -- Formatter --
+        alejandra
+        dprint
+        nixfmt
+        ruff
+        stylua
+        typstyle
+        shfmt
+
+        # -- Other --
+        websocat # dependency for typst-preview
+        ripgrep
+        pandoc
+      ]);
+
+      home.stateVersion = lib.mkDefault "26.05";
+    }
   ];
 }
