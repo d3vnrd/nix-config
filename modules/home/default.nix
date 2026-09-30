@@ -23,7 +23,7 @@ in {
 
       path = lib.mkOption {
         type = lib.types.str;
-        default = "${config.home.homeDirectory}/dotfiles";
+        default = "${config.xdg.configHome}/dotfiles";
         description = "Location where the dotfiles repository is cloned.";
       };
     };
