@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   vars,
@@ -7,6 +8,8 @@
 }: let
   cfg = config.M;
 in {
+  imports = lib.optional (inputs ? "sops-nix") inputs.sops-nix.homeManagerModules.sops;
+
   options.M = {
     dotfiles = {
       enable = lib.mkEnableOption "Enable support for user dotfiles.";
@@ -23,12 +26,6 @@ in {
         default = "${config.home.homeDirectory}/dotfiles";
         description = "Location where the dotfiles repository is cloned.";
       };
-    };
-
-    enableDefaultPkgs = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Enable default user packages.";
     };
   };
 
@@ -55,7 +52,10 @@ in {
     {
       home.username = vars.username;
 
-      home.packages = lib.optionals cfg.enableDefaultPkgs (with pkgs; [
+      home.packages = with pkgs; [
+        # To disable default pkgs simply include lib.mkForce or lib.mkOverride
+        # before pkgs list
+
         # -- LSP --
         bash-language-server
         lua-language-server
@@ -84,7 +84,7 @@ in {
         websocat # dependency for typst-preview
         ripgrep
         pandoc
-      ]);
+      ];
 
       home.stateVersion = lib.mkDefault "26.05";
     }
