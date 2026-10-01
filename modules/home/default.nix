@@ -8,7 +8,8 @@
 }: let
   cfg = config.M;
 in {
-  imports = lib.optional (inputs ? "sops-nix") inputs.sops-nix.homeManagerModules.sops;
+  imports =
+    lib.optional (inputs ? "sops-nix") inputs.sops-nix.homeManagerModules.sops;
 
   options.M = {
     dotfiles = {
@@ -88,5 +89,11 @@ in {
 
       home.stateVersion = lib.mkDefault "26.05";
     }
+
+    (lib.optionalAttrs (inputs ? "sops-nix") {
+      sops.defaultSopsFile = lib.mkDefault "${inputs.self}/secrets.yaml";
+      sops.age.keyFile = lib.mkDefault "${config.xdg.configHome}/sops/age/keys.txt";
+      sops.age.generateKey = lib.mkDefault true;
+    })
   ];
 }
