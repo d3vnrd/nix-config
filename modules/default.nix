@@ -1,6 +1,7 @@
 {
   inputs,
   lib,
+  pkgs,
   hostname,
   vars,
   ...
@@ -14,7 +15,7 @@ in {
   ];
 
   config = lib.mkMerge [
-    ({pkgs, ...}: {
+    {
       # Setting machine's hostname
       networking.hostName = lib.mkForce hostname;
 
@@ -40,7 +41,7 @@ in {
       environment.systemPackages = with pkgs; [
         curl
       ];
-    })
+    }
 
     (lib.optionalAttrs (inputs ? "home-manager") {
       home-manager = {
