@@ -11,7 +11,7 @@
   programs.neovim = {
     enable = true;
     defaultEditor = lib.mkDefault true;
-    sideloadInitLua = lib.mkDefault true;
+    sideloadInitLua = true;
     extraPackages = with pkgs; [
       fd
       fzf
@@ -30,9 +30,10 @@
         "nvim/init.lua" = let
           srcPath = "${self}/${vars.hostConfigDir}/nvim/init.lua";
         in {
-          enable =
-            builtins.pathExists srcPath
-            && config.programs.neovim.sideloadInitLua;
+          enable = lib.mkForce (
+            (builtins.pathExists srcPath)
+            && config.programs.neovim.sideloadInitLua
+          );
           source = config.lib.file.mkOutOfStoreSymlink srcPath;
           force = true;
         };
@@ -44,7 +45,9 @@
           ".dprint.jsonc"
           ".luarc.jsonc"
           ".stylua.toml"
-          "nvim-pack-lock.json"
+
+          # TODO: special case with neovim packages manager
+          # "nvim-pack-lock.json"
         ] (name: {
           name = "nvim/${name}";
           value = {
