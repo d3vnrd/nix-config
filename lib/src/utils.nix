@@ -1,6 +1,9 @@
-{lib, ...}: {
+{lib, ...}: rec {
+  existingPaths = paths:
+    builtins.filter (p: builtins.pathExists p) paths;
+
   existingPathsRelativeTo = root: paths:
-    builtins.filter builtins.pathExists (map (p: root + "/${p}") paths);
+    existingPaths (map (p: lib.path.append root p) paths);
 
   mergeAttrsNoOverride = builtins.foldl' lib.attrsets.unionOfDisjoint {};
 
