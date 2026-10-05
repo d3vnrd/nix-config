@@ -29,9 +29,9 @@ in
       {
         inherit recursiveScan;
         inherit
-          (ncLib.maker)
-          mkNixOsSystem
-          mkDarwinSystem
+          (ncLib.build)
+          mkNixosConfigurations
+          mkDarwinConfigurations
           ;
       }
   )

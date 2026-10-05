@@ -22,6 +22,27 @@
     ];
   };
 
+  home.packages = with pkgs; [
+    # -- LSP --
+    bash-language-server
+    lua-language-server
+    yaml-language-server
+    vscode-css-languageserver
+    nil
+    harper
+    basedpyright
+    tinymist
+    markdown-oxide
+
+    # -- Formatter --
+    dprint
+    nixfmt
+    ruff
+    stylua
+    typstyle
+    shfmt
+  ];
+
   xdg.configFile = let
     inherit (inputs) nix-config self;
   in

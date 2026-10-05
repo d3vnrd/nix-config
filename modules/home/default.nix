@@ -2,59 +2,30 @@
   config,
   inputs,
   lib,
-  pkgs,
-  vars,
   ...
-}: {
-  imports =
-    lib.optional (inputs ? "sops-nix")
-    inputs.sops-nix.homeManagerModules.sops;
-
-  config = lib.mkMerge [
-    {
-      home.username = vars.username;
-
-      home.packages = with pkgs; [
-        # To disable default pkgs simply include lib.mkForce or lib.mkOverride
-        # before pkgs list
-
-        # -- LSP --
-        bash-language-server
-        lua-language-server
-        yaml-language-server
-        vscode-css-languageserver
-        nil
-        harper
-        basedpyright
-        tinymist
-        markdown-oxide
-
-        # -- DAP --
-
-        # -- Linter --
-
-        # -- Formatter --
-        alejandra
-        dprint
-        nixfmt
-        ruff
-        stylua
-        typstyle
-        shfmt
-
-        # -- Other --
-        websocat # dependency for typst-preview
-        ripgrep
-        pandoc
-      ];
-
-      home.stateVersion = lib.mkDefault "26.05";
-    }
-
-    (lib.optionalAttrs (inputs ? "sops-nix") {
-      sops.defaultSopsFile = lib.mkDefault "${inputs.self}/secrets.yaml";
-      sops.age.keyFile = lib.mkDefault "${config.xdg.configHome}/sops/age/keys.txt";
-      sops.age.generateKey = lib.mkDefault true;
-    })
+}: let
+  inherit (inputs) nix-config self;
+in {
+  imports = lib.flatten [
+    (nix-config.lib.utils.existingPathsRelativeTo self ["home.nix"])
+    (lib.optional (inputs ? "sops-nix") ./sops.nix)
   ];
+
+  options.nixConfig = {
+    dotfiles.path = lib.mkOption {
+      type = lib.types.str;
+      default = "${config.xdg.configHome}/dotfiles";
+      description = "Default location where the dotfiles repository is cloned.";
+    };
+
+    dotfiles.fetchFrom = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = {};
+      description = "Dotfiles repositories to clone, as name = git URL. Each is cloned to path/<name>.";
+      example = {
+        neovim = "https://github.com/example/neovim-config.git";
+        emacs = "https://github.com/example/emacs-config.git";
+      };
+    };
+  };
 }

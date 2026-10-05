@@ -1,23 +1,21 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
   hostname,
-  vars,
   ...
 }: let
   inherit (inputs) nix-config self;
-  inherit (nix-config.lib.utils) existingPathsRelativeTo;
+  inherit (config) _opts;
 in {
-  imports = existingPathsRelativeTo self [
-    "configuration.nix"
-    "hardware-configuration.nix"
-  ];
+  # TODO: adding options for host override default values
+  options._opts = {};
 
+  # --- Global configurations ---
   config = lib.mkMerge [
     {
-      # Setting machine's hostname
-      networking.hostName = lib.mkForce hostname;
+      assertions = [];
 
       nix.settings = {
         experimental-features = lib.mkForce ["nix-command" "flakes"];
@@ -27,7 +25,23 @@ in {
 
       nixpkgs.config.allowUnfree = lib.mkDefault true;
 
-      # Global configurable programs
+      networking.hostName = lib.mkForce hostname;
+
+      users.mutableUsers = false;
+      users.users.default = {
+        inherit (_opts.user) name;
+        isNormalUser = true;
+        extraGroups = ["wheel"];
+        description = "Default host's user";
+        openssh.authorizedKeys.keys = _opts.user.sshAuthorizedKeys;
+      };
+
+      services.openssh = {
+        enable = true;
+        # TODO: add initial password and set this to true
+        settings.PasswordAuthentication = false;
+      };
+
       programs = {
         git.enable = true;
 
@@ -37,27 +51,28 @@ in {
         };
       };
 
-      # Global packages
       environment.systemPackages = with pkgs; [
         curl
       ];
     }
 
-    (lib.optionalAttrs (inputs ? "home-manager") {
+    (lib.optionalAttrs (inputs ? home-manager) {
       home-manager = {
+        users = {
+          # TODO: Verify if home-manager were able to resolve this correctly
+          ${config.users.users.default.name}.imports = [
+            nix-config.homeModules.default
+          ];
+        };
+
         useGlobalPkgs = lib.mkDefault true;
         useUserPackages = lib.mkDefault true;
-        extraSpecialArgs = lib.mkForce {inherit inputs vars;};
+        extraSpecialArgs = lib.mkForce {inherit inputs;};
       };
-
-      home-manager.users.${vars.username}.imports =
-        [nix-config.homeModules.default]
-        ++ (existingPathsRelativeTo self ["home.nix"]);
     })
 
-    (lib.optionalAttrs (inputs ? "sops-nix") {
+    (lib.optionalAttrs (inputs ? sops-nix) {
       sops.defaultSopsFile = lib.mkDefault "${self}/secrets.yaml";
-      # Automatically import SSH keys as age keys
       sops.age.sshKeyPaths = lib.mkDefault ["/etc/ssh/ssh_host_ed25519_key"];
     })
   ];

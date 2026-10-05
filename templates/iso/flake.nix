@@ -16,7 +16,7 @@
     forAllSystems' = lib.genAttrs' supported;
   in {
     nixosConfigurations = nix-config.lib.utils.mergeAttrsNoOverride (let
-      inherit (nix-config.lib.maker) mkNixOsInstaller;
+      inherit (nix-config.lib) mkNixOsInstaller;
     in [
       (forAllSystems' (system: {
         name = "iso_${system}";
