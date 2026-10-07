@@ -21,38 +21,37 @@
           }
       );
     in
-      lib.mapAttrs (_: f: lib.mapAttrs (_: f) pkgs);
-  in
-    {
-      lib = import ./lib lib;
+      f: lib.mapAttrs (_: f) pkgs;
+  in {
+    lib = import ./lib {inherit lib supported;};
 
-      # Overlay, consumed by other flakes
-      overlays = import ./overlays {inherit inputs lib;};
+    # Overlay, consumed by other flakes
+    overlays = import ./overlays {inherit inputs lib;};
 
-      # Used by `nix flake init -t <flake>`
-      templates = import ./templates lib;
+    # Used by `nix flake init -t <flake>`
+    templates = import ./templates lib;
 
-      # Nix-config's exposed modules
-      nixosModules = self.lib.recursiveScan ./modules/nixos;
-      darwinModules = self.lib.recursiveScan ./modules/darwin;
-      homeModules = self.lib.recursiveScan ./modules/home;
-    }
-    // forAllSystems {
-      checks = pkgs: import ./checks {inherit inputs lib pkgs;};
+    # Nix-config's exposed modules
+    nixosModules = self.lib.recursiveScan ./modules/nixos;
+    darwinModules = self.lib.recursiveScan ./modules/darwin;
+    homeModules = self.lib.recursiveScan ./modules/home;
 
-      # Used by `nix develop .#<name>`
-      devShells = pkgs: import ./shells pkgs;
+    # Executed by `nix flake check`
+    checks = forAllSystems (pkgs: import ./checks {inherit inputs lib pkgs;});
 
-      # Set formatter used by `nix fmt`
-      formatter = pkgs: pkgs.nixfmt;
+    # Used by `nix develop .#<name>`
+    devShells = forAllSystems (pkgs: import ./shells pkgs);
 
-      # Exported derivations
-      packages = pkgs:
-        lib.packagesFromDirectoryRecursive {
-          inherit (pkgs) callPackage;
-          directory = ./pkgs;
-        };
-    };
+    # Set formatter used by `nix fmt`
+    formatter = forAllSystems (pkgs: pkgs.nixfmt);
+
+    # Exported package derivations
+    packages = forAllSystems (pkgs:
+      lib.packagesFromDirectoryRecursive {
+        inherit (pkgs) callPackage;
+        directory = ./pkgs;
+      });
+  };
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

@@ -1,4 +1,4 @@
-# TODO: update following `options` in ./modules/default.nix
+# TODO: update following `options` in ./lib/src/_internal/global-opts.nix
 {
   username = "nixos";
   timeZone = "UTC";

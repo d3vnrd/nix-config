@@ -1,4 +1,7 @@
-lib: let
+{
+  lib,
+  supported ? [],
+}: let
   recursiveScan = path:
     lib.foldlAttrs (
       acc: entry: type: let
@@ -21,17 +24,23 @@ lib: let
     ) (builtins.readDir path));
 in
   lib.fix (
-    ncLib: let
-      callLibs = file: import file {inherit lib ncLib;};
+    ext: let
+      inherit
+        (lib.attrsets)
+        genAttrs
+        unionOfDisjoint
+        mapAttrsRecursive
+        ;
+
+      callLibs = file:
+        import file {
+          lib = lib.extend (final: prev: {inherit ext;});
+        };
     in
-      lib.attrsets.unionOfDisjoint
-      (lib.mapAttrsRecursive (_: callLibs) (recursiveScan ./src))
-      {
+      unionOfDisjoint (mapAttrsRecursive (_: callLibs) (recursiveScan ./src)) {
         inherit recursiveScan;
-        inherit
-          (ncLib.build)
-          mkNixosConfigurations
-          mkDarwinConfigurations
-          ;
+        inherit (ext.flake) mkHostsFlake;
+
+        supported = genAttrs supported (name: name);
       }
   )
