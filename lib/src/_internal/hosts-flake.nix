@@ -12,7 +12,7 @@ in {
     type = types.attrsOf (types.submodule ({config, ...}: {
       options = {
         # TODO: add custom type check for valid system str
-        system = mkOption {type = types.str;};
+        system = mkOption {type = types.enum lib.ext.supported;};
 
         modules = mkOption {
           type = types.listOf types.raw;
@@ -44,5 +44,7 @@ in {
     darwinConfigurations = mkDarwinConfigurations inputs (
       lib.filterAttrs (_: host: host.isDarwin) config.hosts
     );
+
+    # TODO: adding other host attrs examine flake-parts for example
   };
 }

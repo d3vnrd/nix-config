@@ -29,17 +29,21 @@ in {
 
       users.mutableUsers = false;
       users.users.default = {
-        inherit (_opts.user) name;
+        inherit
+          (_opts.user)
+          name
+          description
+          initialHashedPassword
+          ;
+
         isNormalUser = true;
         extraGroups = ["wheel"];
-        description = "Default host's user";
         openssh.authorizedKeys.keys = _opts.user.sshAuthorizedKeys;
       };
 
       services.openssh = {
         enable = true;
-        # TODO: add initial password and set this to true
-        settings.PasswordAuthentication = false;
+        settings.PasswordAuthentication = true;
       };
 
       programs = {
@@ -60,7 +64,7 @@ in {
       home-manager = {
         users = {
           # TODO: Verify if home-manager were able to resolve this correctly
-          ${config.users.users.default.name}.imports = [
+          ${_opts.user.name}.imports = [
             nix-config.homeModules.default
           ];
         };

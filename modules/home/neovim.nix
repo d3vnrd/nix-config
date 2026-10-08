@@ -3,79 +3,57 @@
   inputs,
   lib,
   pkgs,
-  vars,
   ...
-}: {
-  imports = [./yazi.nix];
+}: let
+  inherit (config.M) dotfiles;
+  mutable = dotfiles.fetchFrom ? neovim;
+in {
+  config = lib.mkMerge [
+    {
+      programs.neovim = {
+        enable = true;
+        defaultEditor = lib.mkDefault true;
+        extraPackages = with pkgs; [fd fzf xclip sqlite];
+      };
+    }
 
-  programs.neovim = {
-    enable = true;
-    defaultEditor = lib.mkDefault true;
-    sideloadInitLua = true;
-    extraPackages = with pkgs; [
-      fd
-      fzf
-      gcc
-      tree-sitter
-      xclip
-      sqlite
-    ];
-  };
+    (lib.mkIf mutable (let
+      url = dotfiles.fetchFrom.neovim;
+      path = "${dotfiles.defaultPath}/nvim";
+    in {
+      home.activation.fetchNvimConfig = lib.hm.dag.entryBefore ["writeBoundary"] ''
+        if [ ! -d "${path}/.git" ]; then
+          $DRY_RUN_CMD ${pkgs.git}/bin/git clone "${url}" "${path}" \
+            || echo "fetchNvimConfig: clone of ${url} failed, ~/.config/nvim will dangle" >&2
+        fi
+      '';
 
-  home.packages = with pkgs; [
-    # -- LSP --
-    bash-language-server
-    lua-language-server
-    yaml-language-server
-    vscode-css-languageserver
-    nil
-    harper
-    basedpyright
-    tinymist
-    markdown-oxide
+      programs.neovim = {
+        sideloadInitLua = true;
+        extraPackages = with pkgs; [gcc tree-sitter curl gnutar];
+      };
 
-    # -- Formatter --
-    dprint
-    nixfmt
-    ruff
-    stylua
-    typstyle
-    shfmt
+      xdg.configFile."nvim".source =
+        config.lib.file.mkOutOfStoreSymlink path;
+    }))
+
+    (lib.mkIf (!mutable) {
+      programs.neovim = {
+        sideloadInitLua = false;
+        initLua = builtins.readFile "${inputs.nix-config}/.config/nvim/init.lua";
+        plugins = [
+          (pkgs.vimPlugins.nvim-treesitter.withPlugins (p:
+            with p; [
+              bash
+              json
+              lua
+              markdown
+              markdown_inline
+              nix
+              python
+            ]))
+        ];
+      };
+    })
   ];
-
-  xdg.configFile = let
-    inherit (inputs) nix-config self;
-  in
-    nix-config.lib.utils.mergeAttrsNoOverride [
-      {
-        "nvim/init.lua" = let
-          srcPath = "${self}/${vars.hostConfigDir}/nvim/init.lua";
-        in {
-          enable = lib.mkForce (
-            (builtins.pathExists srcPath)
-            && config.programs.neovim.sideloadInitLua
-          );
-          source = config.lib.file.mkOutOfStoreSymlink srcPath;
-          force = true;
-        };
-      }
-
-      (lib.optionalAttrs (inputs ? "neovim-config") (
-        lib.genAttrs' [
-          "lua"
-          ".dprint.jsonc"
-          ".luarc.jsonc"
-          ".stylua.toml"
-
-          # TODO: special case with neovim packages manager
-          # "nvim-pack-lock.json"
-        ] (name: {
-          name = "nvim/${name}";
-          value = {
-            source = "${inputs.neovim-config}/${name}";
-            force = true;
-          };
-        })
-      ))
-    ];
 }

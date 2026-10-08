@@ -27,7 +27,6 @@ in
     ext: let
       inherit
         (lib.attrsets)
-        genAttrs
         unionOfDisjoint
         mapAttrsRecursive
         ;
@@ -38,9 +37,7 @@ in
         };
     in
       unionOfDisjoint (mapAttrsRecursive (_: callLibs) (recursiveScan ./src)) {
-        inherit recursiveScan;
+        inherit recursiveScan supported;
         inherit (ext.flake) mkHostsFlake;
-
-        supported = genAttrs supported (name: name);
       }
   )

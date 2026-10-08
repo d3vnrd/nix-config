@@ -1,6 +1,6 @@
-{
+{lib, ...}: {
   programs.yazi = {
-    enable = true;
+    enable = lib.mkDefault true;
     settings = {
       mgr = {
         ratio = [0 3 5];

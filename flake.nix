@@ -13,7 +13,7 @@
     ];
 
     forAllSystems = let
-      pkgs = lib.genAttrs supported (
+      perSystemPkgs = lib.genAttrs supported (
         system:
           import nixpkgs {
             inherit system;
@@ -21,7 +21,7 @@
           }
       );
     in
-      f: lib.mapAttrs (_: f) pkgs;
+      f: lib.mapAttrs (_: f) perSystemPkgs;
   in {
     lib = import ./lib {inherit lib supported;};
 
