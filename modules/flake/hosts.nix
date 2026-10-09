@@ -1,18 +1,23 @@
-lib: {
+{
   config,
   inputs,
+  lib,
   ...
 }: let
+  inherit
+    (inputs.nix-config.lib)
+    mkNixosConfigurations
+    mkDarwinConfigurations
+    supported
+    ;
   inherit (lib) mkOption types;
-  inherit (lib.ext.flake) mkNixosConfigurations mkDarwinConfigurations;
 in {
   options.hosts = mkOption {
     description = "Hosts as name = {system; modules;}.";
 
     type = types.attrsOf (types.submodule ({config, ...}: {
       options = {
-        # TODO: add custom type check for valid system str
-        system = mkOption {type = types.enum lib.ext.supported;};
+        system = mkOption {type = types.enum supported;};
 
         modules = mkOption {
           type = types.listOf types.raw;

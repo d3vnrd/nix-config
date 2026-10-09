@@ -36,6 +36,9 @@
     darwinModules = self.lib.recursiveScan ./modules/darwin;
     homeModules = self.lib.recursiveScan ./modules/home;
 
+    # For nix-config internal use only
+    flakeModules = self.lib.recursiveScan ./modules/flake;
+
     # Executed by `nix flake check`
     checks = forAllSystems (pkgs: import ./checks {inherit inputs lib pkgs;});
 

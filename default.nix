@@ -1,4 +1,4 @@
-# TODO: update following `options` in ./lib/src/_internal/global-opts.nix
+# TODO: update following `options` in ./modules/flake/default.nix
 {
   user = {
     name = "nixos";

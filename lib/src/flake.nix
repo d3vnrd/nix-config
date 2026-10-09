@@ -5,14 +5,18 @@
     defaultModule,
   }: hosts:
     lib.mapAttrs (
-      hostName: host:
+      hostName: {
+        system,
+        modules ? [],
+        ...
+      }:
         build {
-          inherit (host) system;
+          inherit system;
 
           specialArgs = {inherit inputs hostName;};
 
           modules = lib.flatten [
-            (import ./_internal/global-opts.nix lib)
+            inputs.nix-config.flakeModules.default
 
             defaultModule
 
@@ -21,7 +25,7 @@
               "hosts/${hostName}/hardware-configuration.nix"
             ])
 
-            (host.modules or [])
+            modules
           ];
         }
     )
@@ -58,10 +62,7 @@ in {
   mkHostsFlake = {inputs}: module: let
     eval = lib.evalModules {
       specialArgs = {inherit inputs;};
-      modules = [
-        (import ./_internal/hosts-flake.nix lib)
-        module
-      ];
+      modules = [inputs.nix-config.flakeModules.hosts module];
     };
   in
     lib.throwIf (!inputs ? self) ''

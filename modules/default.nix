@@ -3,20 +3,15 @@
   inputs,
   lib,
   pkgs,
-  hostname,
+  hostName,
   ...
 }: let
   inherit (inputs) nix-config self;
-  inherit (config) _opts;
+  inherit (config.default) user;
 in {
-  # TODO: adding options for host override default values
-  options._opts = {};
-
   # --- Global configurations ---
   config = lib.mkMerge [
     {
-      assertions = [];
-
       nix.settings = {
         experimental-features = lib.mkForce ["nix-command" "flakes"];
         auto-optimise-store = lib.mkDefault true;
@@ -24,37 +19,9 @@ in {
       };
 
       nixpkgs.config.allowUnfree = lib.mkDefault true;
+      networking.hostName = lib.mkForce hostName;
 
-      networking.hostName = lib.mkForce hostname;
-
-      users.mutableUsers = false;
-      users.users.default = {
-        inherit
-          (_opts.user)
-          name
-          description
-          initialHashedPassword
-          ;
-
-        isNormalUser = true;
-        extraGroups = ["wheel"];
-        openssh.authorizedKeys.keys = _opts.user.sshAuthorizedKeys;
-      };
-
-      services.openssh = {
-        enable = true;
-        settings.PasswordAuthentication = true;
-      };
-
-      programs = {
-        git.enable = true;
-
-        vim = {
-          enable = true;
-          defaultEditor = true;
-        };
-      };
-
+      programs.git.enable = true;
       environment.systemPackages = with pkgs; [
         curl
       ];
@@ -62,16 +29,10 @@ in {
 
     (lib.optionalAttrs (inputs ? home-manager) {
       home-manager = {
-        users = {
-          # TODO: Verify if home-manager were able to resolve this correctly
-          ${_opts.user.name}.imports = [
-            nix-config.homeModules.default
-          ];
-        };
-
+        users.${user.name}.imports = [nix-config.homeModules.default];
         useGlobalPkgs = lib.mkDefault true;
         useUserPackages = lib.mkDefault true;
-        extraSpecialArgs = lib.mkForce {inherit inputs;};
+        extraSpecialArgs = lib.mkDefault {inherit inputs;};
       };
     })
 

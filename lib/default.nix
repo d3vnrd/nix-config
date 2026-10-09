@@ -38,6 +38,11 @@ in
     in
       unionOfDisjoint (mapAttrsRecursive (_: callLibs) (recursiveScan ./src)) {
         inherit recursiveScan supported;
-        inherit (ext.flake) mkHostsFlake;
+        inherit
+          (ext.flake)
+          mkNixosConfigurations
+          mkDarwinConfigurations
+          mkHostsFlake
+          ;
       }
   )
