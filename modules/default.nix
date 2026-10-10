@@ -32,7 +32,13 @@ in {
         users.${user.name}.imports = [nix-config.homeModules.default];
         useGlobalPkgs = lib.mkDefault true;
         useUserPackages = lib.mkDefault true;
-        extraSpecialArgs = lib.mkDefault {inherit inputs;};
+
+        /*
+        NOTE: do not wrap extraSpecialArgs in mkDefault/mkForce. A priority-wrapped
+        definition replaces all plain ones instead of merging with them, so `inputs`
+        was silently dropped (or other args overridden) in the Home Manager modules.
+        */
+        extraSpecialArgs = {inherit inputs;};
       };
     })
 
