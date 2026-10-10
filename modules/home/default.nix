@@ -1,7 +1,13 @@
 {
+  osConfig ?
+    throw ''
+      nix-config's Home Manager modules only support the integrated mode
+      (home-manager.nixosModules or home-manager.darwinModules).
+      Standalone `home-manager switch` is not supported: these modules read
+      `osConfig` for the hostname and the user, which only exists there.
+    '',
   config,
   inputs,
-  pkgs,
   lib,
   ...
 }: let
@@ -9,7 +15,7 @@
 in {
   imports = lib.flatten [
     (nix-config.lib.utils.existingPathsRelativeTo self [
-      "home.nix"
+      "hosts/${osConfig.networking.hostName}/home.nix"
     ])
 
     (lib.optional
@@ -33,7 +39,6 @@ in {
     defaultPath = lib.mkOption {
       description = ''
         Default location where the dotfiles repository is cloned
-        (must be outside ~/.config).
       '';
       type = lib.types.str;
       default = "${config.xdg.configHome}/dotfiles";
@@ -41,31 +46,16 @@ in {
   };
 
   config = lib.mkMerge [
-    (
-      let
-        cfg = config.M.dotfiles;
+    {
+      assertions =
+        lib.mapAttrsToList (name: url: {
+          assertion = url != "";
+          message = "M.dotfiles.fetchFrom.${name}: URL must not be empty.";
+        })
+        config.M.dotfiles.fetchFrom;
 
-        clone = name: url: ''
-          if [ ! -d "${cfg.defaultPath}/${name}/.git" ]; then
-            $DRY_RUN_CMD ${pkgs.git}/bin/git clone "${url}" "${cfg.defaultPath}/${name}" \
-              || echo "fetchDotfiles: clone of ${url} failed, links into ${cfg.defaultPath}/${name} will dangle" >&2
-          fi
-        '';
-      in {
-        assertions =
-          lib.mapAttrsToList (name: url: {
-            assertion = url != "";
-            message = "M.dotfiles.fetchFrom.${name}: URL must not be empty.";
-          })
-          cfg.fetchFrom;
-
-        home.activation.fetchDotfiles = lib.mkIf (cfg.fetchFrom != {}) (
-          lib.hm.dag.entryBefore ["writeBoundary"] ''
-            ${lib.concatStringsSep "\n" (lib.mapAttrsToList clone cfg.fetchFrom)}
-          ''
-        );
-      }
-    )
+      home.stateVersion = lib.mkDefault "26.05";
+    }
 
     (lib.optionalAttrs (inputs ? sops-nix) {
       sops.defaultSopsFile = lib.mkDefault "${inputs.self}/secrets.yaml";
